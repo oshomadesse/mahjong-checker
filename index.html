@@ -2,7 +2,6 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
-  <!-- ズーム抑止（ダブルタップ・フォーム系拡大の抑止）-->
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
   <title>麻雀チェッカー</title>
   <style>
@@ -13,7 +12,6 @@
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       padding: 20px;
-      /* ダブルタップズーム抑止（対応ブラウザ） */
       touch-action: manipulation;
     }
     .container {
@@ -25,7 +23,6 @@
       color: white; padding: 30px; text-align: center;
     }
     .header h1 { font-size: 2em; margin-bottom: 14px; }
-    /* 使い方（タイトル直下） */
     .usage-box {
       margin: 0 auto; background: rgba(255,255,255,0.12);
       border: 1px solid rgba(255,255,255,0.35);
@@ -48,7 +45,6 @@
       display: flex; flex-direction: column; align-items: center; padding: 10px;
       background: white; border: 2px solid #ddd; border-radius: 8px; cursor: pointer;
       transition: all 0.3s ease; position: relative; width: 100%; font-family: inherit;
-      /* iOSでのフォーカス時ズーム対策：16px以上 */
       font-size: 16px;
     }
     .tile-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
@@ -56,8 +52,7 @@
     .tile-button.selected-2 { background: #bbdefb; border-color: #1976d2; }
     .tile-button.selected-3 { background: #90caf9; border-color: #1565c0; }
     .tile-button.selected-4 { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: #667eea; }
-    .tile-button:disabled { opacity: 0.5; cursor: not-allowed; }
-    .tile-button:disabled:hover { transform: none; box-shadow: none; }
+    .tile-button:disabled { opacity: 0.5; cursor: not-allowed; pointer-events: none; }
     .tile-display { font-size: 1.8em; font-weight: bold; margin-bottom: 5px; }
     .tile-display.jihai { font-size: 1.5em; }
     .tile-count {
@@ -66,7 +61,7 @@
       font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
-    .controls { display: flex; gap: 10px; margin: 30px 0 20px 0; flex-wrap: wrap; }
+    .controls { display: flex; gap: 10px; margin: 30px 0 10px 0; flex-wrap: wrap; }
     .btn { padding: 12px 30px; font-size: 1em; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: bold; }
     .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
     .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
@@ -74,11 +69,30 @@
     .btn-secondary:hover { background: #5a6268; }
     .btn:disabled { opacity: 0.5; cursor: not-allowed; }
     .selected-count { padding: 10px 20px; background: #e9ecef; border-radius: 8px; font-weight: bold; }
+    .error-message { color: #dc3545; padding: 10px; background: #f8d7da; border-radius: 5px; }
 
-    .result-section { margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 10px; min-height: 100px; }
+    .result-section { margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; min-height: 100px; }
     .result-title { font-size: 1.3em; font-weight: bold; margin-bottom: 15px; color: #333; }
-    .waiting-tiles { display: flex; gap: 10px; flex-wrap: wrap; }
-    .waiting-tile { padding: 15px 20px; background: white; border: 2px solid #667eea; border-radius: 8px; font-size: 1.2em; font-weight: bold; color: #667eea; animation: fadeIn 0.5s ease; }
+
+    .waiting-tiles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+    .waiting-tile {
+      display: block;
+      text-align: center;
+      padding: 12px 10px;
+      background: white;
+      border: 2px solid #667eea;
+      border-radius: 8px;
+      font-size: 1.1em;
+      font-weight: 700;
+      color: #667eea;
+      line-height: 1.2;
+      animation: fadeIn 0.5s ease;
+    }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
     .no-waiting { color: #6c757d; font-style: italic; }
   </style>
@@ -99,39 +113,20 @@
 
     <div class="content">
       <div class="tiles-section">
-        <!-- マンズ（1と9のみ） -->
         <div class="suit-group">
-          <div class="suit-title">
-            <div class="suit-icon man-icon"></div>
-            萬子（マンズ）
-          </div>
+          <div class="suit-title"><div class="suit-icon man-icon"></div>萬子（マンズ）</div>
           <div class="tiles-grid" id="man-tiles"></div>
         </div>
-
-        <!-- ピンズ -->
         <div class="suit-group">
-          <div class="suit-title">
-            <div class="suit-icon pin-icon"></div>
-            筒子（ピンズ）
-          </div>
+          <div class="suit-title"><div class="suit-icon pin-icon"></div>筒子（ピンズ）</div>
           <div class="tiles-grid" id="pin-tiles"></div>
         </div>
-
-        <!-- ソーズ -->
         <div class="suit-group">
-          <div class="suit-title">
-            <div class="suit-icon sou-icon"></div>
-            索子（ソーズ）
-          </div>
+          <div class="suit-title"><div class="suit-icon sou-icon"></div>索子（ソーズ）</div>
           <div class="tiles-grid" id="sou-tiles"></div>
         </div>
-
-        <!-- 字牌 -->
         <div class="suit-group">
-          <div class="suit-title">
-            <div class="suit-icon ji-icon"></div>
-            字牌（ジハイ）
-          </div>
+          <div class="suit-title"><div class="suit-icon ji-icon"></div>字牌（ジハイ）</div>
           <div class="tiles-grid" id="ji-tiles"></div>
         </div>
       </div>
@@ -141,17 +136,18 @@
         <button class="btn btn-secondary" onclick="clearSelection()">選択をクリア</button>
         <div class="selected-count">選択中: <span id="selectedCount">0</span> / 13枚</div>
       </div>
+      <div id="limitMsg" class="error-message" style="display:none">13枚までです。新しい牌は選択できません。</div>
 
       <div class="result-section">
         <div class="result-title">待ち牌</div>
-        <div id="result">
-          <p class="no-waiting">13枚の牌を選択してください</p>
-        </div>
+        <div id="result"><p class="no-waiting">13枚の牌を選択してください</p></div>
       </div>
     </div>
   </div>
 
 <script>
+  const MAX_SELECTED = 13;
+
   const tiles = {
     man: [1,9],
     pin: [1,2,3,4,5,6,7,8,9],
@@ -214,25 +210,49 @@
     `;
   }
 
+  // ▼ 13枚制限の“強化”ロジック
   function updateTileSelection(tileId) {
-    const button = document.getElementById(tileId);
-    const countSpan = document.getElementById(`count-${tileId}`);
-    const currentCount = tileCount[tileId];
+    const current = tileCount[tileId];
 
-    let newCount;
-    if (currentCount >= 4) {
-      newCount = 0;
-    } else {
-      // 13枚制限を超えないよう制御
-      if (selectedTotal === 13 && currentCount === 0) {
-        newCount = 0;
+    // 既に上限なら：未選択の牌は選べない／選択中の牌は0にだけできる
+    if (selectedTotal >= MAX_SELECTED) {
+      if (current === 0) {
+        flashLimit();
+        return;
       } else {
-        newCount = currentCount + 1;
+        // 上限時は1〜3→0に即リセット、4→0（減る操作のみ可）
+        applyCount(tileId, 0);
+        return;
       }
     }
 
-    selectedTotal = selectedTotal - currentCount + newCount;
+    // 通常時：0→1→2→3→4→0（ただし13を超える増分は許可しない）
+    const next = (current >= 4) ? 0 : current + 1;
+
+    // これからの増分
+    const delta = next - current;
+
+    if (selectedTotal + delta > MAX_SELECTED) {
+      // 新規選択（current=0）の場合は拒否、既存（current>0）は0に落とす
+      if (current === 0) {
+        flashLimit();
+        return;
+      } else {
+        applyCount(tileId, 0);
+        return;
+      }
+    }
+
+    applyCount(tileId, next);
+  }
+
+  function applyCount(tileId, newCount) {
+    const button = document.getElementById(tileId);
+    const countSpan = document.getElementById(`count-${tileId}`);
+    const old = tileCount[tileId];
+
     tileCount[tileId] = newCount;
+    selectedTotal += (newCount - old);
 
     button.className = 'tile-button';
     if (newCount > 0) {
@@ -242,22 +262,18 @@
     } else {
       countSpan.style.display = 'none';
     }
-
+    hideLimit();
     updateUI();
   }
 
   function updateUI() {
     document.getElementById('selectedCount').textContent = selectedTotal;
-    document.getElementById('checkBtn').disabled = (selectedTotal !== 13);
+    document.getElementById('checkBtn').disabled = (selectedTotal !== MAX_SELECTED);
 
     Object.keys(tileCount).forEach(tileId => {
       const button = document.getElementById(tileId);
-      const currentCount = tileCount[tileId];
-      if (selectedTotal >= 13 && currentCount === 0) {
-        button.disabled = true;
-      } else {
-        button.disabled = false;
-      }
+      const current = tileCount[tileId];
+      button.disabled = (selectedTotal >= MAX_SELECTED && current === 0);
     });
   }
 
@@ -270,18 +286,27 @@
       document.getElementById(`count-${tileId}`).style.display = 'none';
     });
     selectedTotal = 0;
+    hideLimit();
     updateUI();
     document.getElementById('result').innerHTML = '<p class="no-waiting">13枚の牌を選択してください</p>';
+  }
+
+  function flashLimit() {
+    const el = document.getElementById('limitMsg');
+    el.style.display = 'block';
+    clearTimeout(flashLimit._t);
+    flashLimit._t = setTimeout(() => { el.style.display = 'none'; }, 1500);
+  }
+  function hideLimit() {
+    const el = document.getElementById('limitMsg');
+    el.style.display = 'none';
   }
 
   function checkWaiting() {
     const hand = [];
     Object.keys(tileCount).forEach(tileId => {
-      for (let i = 0; i < tileCount[tileId]; i++) {
-        hand.push(tileId);
-      }
+      for (let i = 0; i < tileCount[tileId]; i++) hand.push(tileId);
     });
-
     const waitingTiles = findWaitingTiles(hand);
     displayResult(waitingTiles);
   }
@@ -289,20 +314,17 @@
   function findWaitingTiles(hand) {
     const waiting = [];
     const allTiles = [];
-
     tiles.man.forEach(n => allTiles.push(`m${n}`));
     tiles.pin.forEach(n => allTiles.push(`p${n}`));
     tiles.sou.forEach(n => allTiles.push(`s${n}`));
-    tiles.ji.forEach((_, index) => allTiles.push(`z${index + 1}`));
+    tiles.ji.forEach((_, i) => allTiles.push(`z${i + 1}`));
 
-    // 国士13面待ちチェック（13枚時のみ）
     const kokushi13 = checkKokushi13Wait(hand);
     if (kokushi13.length > 0) return kokushi13;
 
     for (const tile of allTiles) {
       const currentCount = hand.filter(t => t === tile).length;
       if (currentCount >= 4) continue;
-
       const testHand = [...hand, tile].sort();
       if (isWinningHand(testHand)) waiting.push(tile);
     }
@@ -314,9 +336,7 @@
     if (hand.length !== 13) return [];
     const counts = {};
     hand.forEach(tile => counts[tile] = (counts[tile] || 0) + 1);
-
     for (const tile of hand) if (!yaochuuTiles.includes(tile)) return [];
-
     let allSingle = true;
     for (const tile of yaochuuTiles) {
       const c = counts[tile] || 0;
@@ -337,7 +357,6 @@
   function isKokushimusou(counts) {
     const yaochuuTiles = ['m1','m9','p1','p9','s1','s9','z1','z2','z3','z4','z5','z6','z7'];
     let pairCount = 0, singleCount = 0;
-
     for (const tile of yaochuuTiles) {
       const c = counts[tile] || 0;
       if (c === 0) return false;
@@ -367,20 +386,20 @@
   }
 
   function checkMentsu(counts) {
-    const tiles = [];
+    const tilesArr = [];
     for (const [tile, c] of Object.entries(counts)) {
-      for (let i = 0; i < c; i++) tiles.push(tile);
+      for (let i = 0; i < c; i++) tilesArr.push(tile);
     }
-    if (tiles.length === 0) return true;
+    if (tilesArr.length === 0) return true;
     return removeMentsu(counts);
   }
 
   function removeMentsu(counts) {
     const total = Object.values(counts).reduce((s, c) => s + c, 0);
     if (total === 0) return true;
-    const tiles = Object.keys(counts).filter(t => counts[t] > 0).sort();
-    if (tiles.length === 0) return true;
-    const first = tiles[0];
+    const tilesArr = Object.keys(counts).filter(t => counts[t] > 0).sort();
+    if (tilesArr.length === 0) return true;
+    const first = tilesArr[0];
 
     if (counts[first] >= 3) {
       const n = {...counts}; n[first] -= 3;
@@ -407,16 +426,16 @@
       resultDiv.innerHTML = '<p class="no-waiting">待ち牌はありません（または未成立）</p>';
       return;
     }
-    const html = waitingTiles.map(t => {
+    const html = `<div class="waiting-tiles">` + waitingTiles.map(t => {
       const suit = t[0];
       const num = t.substring(1);
       const label =
-        suit === 'm' ? `萬${num}` :
-        suit === 'p' ? `筒${num}` :
-        suit === 's' ? `索${num}` :
+        suit === 'm' ? `${num}萬` :
+        suit === 'p' ? `${num}筒` :
+        suit === 's' ? `${num}索` :
         ['東','南','西','北','白','發','中'][parseInt(num)-1];
       return `<span class="waiting-tile">${label}</span>`;
-    }).join('');
+    }).join('') + `</div>`;
     resultDiv.innerHTML = html;
   }
 
@@ -424,4 +443,3 @@
 </script>
 </body>
 </html>
-EOF
