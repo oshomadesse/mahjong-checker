@@ -7,13 +7,13 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html { -webkit-text-size-adjust: 100%; }
-    :root { --footer-h: 84px; } /* 実高さはカードで管理するが余白確保用に少し大きめ */
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      min-height: 100vh;
+      /* ▼ 100svh でブラウザUIの出入りに追随 */
+      min-height: 100svh;
       padding: 20px;
-      padding-bottom: calc(var(--footer-h) + env(safe-area-inset-bottom) + 28px);
+      /* 下余白はJSでフッター高さに合わせて可変にする */
       touch-action: manipulation;
     }
     .container {
@@ -74,21 +74,22 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
     .no-waiting { color: #6c757d; font-style: italic; }
 
-    /* ==== 固定フッター（拡張・二段） ==== */
+    /* ==== 固定フッター（白カード＋二段） ==== */
     .footer-controls {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
       padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
       display: flex; justify-content: center;
-      background: transparent; /* 背景はカードで表現 */
+      background: transparent;
+      pointer-events: none; /* 下の空間をクリック可に */
     }
     .footer-card {
+      pointer-events: auto;
       width: min(900px, 100%);
       background: rgba(255,255,255,0.96);
       border: 1px solid rgba(0,0,0,0.08);
       border-radius: 16px;
       box-shadow: 0 8px 28px rgba(0,0,0,0.18);
       padding: 10px;
-      /* タップしやすく、でもコンパクトに */
     }
     .footer-grid {
       display: grid;
@@ -107,7 +108,6 @@
       background: #e9ecef; padding: 10px 14px; border-radius: 999px; font-size: 14px; font-weight: 800; white-space: nowrap;
     }
 
-    /* ボタン内の意図的改行 */
     .btn-lines { display: inline-block; line-height: 1.1; }
     .btn-lines .l2 { margin-left: .3em; }
     @media (max-width: 420px) {
@@ -160,9 +160,9 @@
     </div>
   </div>
 
-  <!-- 固定フッター（白カード＋二段） -->
+  <!-- 固定フッター -->
   <div class="footer-controls" role="toolbar" aria-label="操作">
-    <div class="footer-card">
+    <div id="footerCard" class="footer-card">
       <div class="footer-grid">
         <button class="btn btn-secondary" id="clearBtn">
           <span class="btn-lines"><span class="l1">選択を</span><span class="l2">クリア</span></span>
@@ -224,6 +224,24 @@
       });
     });
     document.getElementById('clearBtn').addEventListener('click', clearSelection);
+
+    // ▼ フッター高さに合わせてbody下余白を動的設定（Safariのバー出入りに追随）
+    const applyFooterSpace = () => {
+      const card = document.getElementById('footerCard');
+      if (!card) return;
+      const h = Math.ceil(card.getBoundingClientRect().height);
+      // 余白+8pxで少し余裕
+      document.body.style.paddingBottom = (h + 8) + 'px';
+    };
+    applyFooterSpace();
+
+    // visualViewport があればそれに追随
+    if (window.visualViewport) {
+      visualViewport.addEventListener('resize', applyFooterSpace);
+      visualViewport.addEventListener('scroll', applyFooterSpace);
+    }
+    window.addEventListener('resize', applyFooterSpace);
+    window.addEventListener('orientationchange', applyFooterSpace);
   }
 
   function createTileHTML(suit, num) {
@@ -248,12 +266,14 @@
     `;
   }
 
-  // 上限13の厳格制御
+  // 13枚制限（強化版）
   function updateTileSelection(tileId) {
     const current = tileCount[tileId];
 
     if (selectedTotal >= MAX_SELECTED) {
       if (current === 0) { flashLimit(); return; }
+      applyCount(tileId, 0);
+      return;
     }
 
     const next = (current >= 4) ? 0 : current + 1;
@@ -264,6 +284,7 @@
       applyCount(tileId, 0);
       return;
     }
+
     applyCount(tileId, next);
   }
 
