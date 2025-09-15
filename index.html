@@ -9,27 +9,33 @@
     html { -webkit-text-size-adjust: 100%; }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      /* ▼ 100svh でブラウザUIの出入りに追随 */
+      /* 背景：雀卓グリーンのグラデーション */
+      background: linear-gradient(135deg, #0e7641 0%, #0a5a35 100%);
       min-height: 100svh;
       padding: 20px;
-      /* 下余白はJSでフッター高さに合わせて可変にする */
       touch-action: manipulation;
     }
     .container {
       max-width: 900px; margin: 0 auto; background: white;
       border-radius: 20px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); overflow: hidden;
     }
+
+    /* トップ：ヘッダーを白で塗りつぶし（可読性のため文字色は濃色） */
     .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white; padding: 30px; text-align: center;
+      background: #ffffff;
+      color: #333; 
+      padding: 30px; text-align: center;
     }
     .header h1 { font-size: 2em; margin-bottom: 14px; }
+
+    /* 使い方ブロック：塗りつぶし #d73a39、文字色は現状=白のまま */
     .usage-box {
-      margin: 0 auto; background: rgba(255,255,255,0.12);
-      border: 1px solid rgba(255,255,255,0.35);
+      margin: 0 auto; 
+      background: #d73a39;
+      border: none;
       border-radius: 10px; padding: 12px 16px; max-width: 660px;
       text-align: left;
+      color: #fff;
     }
     .usage-title { font-weight: 700; font-size: 1rem; margin-bottom: 6px; }
     .usage-list { margin-left: 1.2em; }
@@ -40,7 +46,13 @@
     .suit-group { margin-bottom: 25px; padding: 20px; background: #f8f9fa; border-radius: 10px; }
     .suit-title { font-size: 1.2em; font-weight: bold; margin-bottom: 15px; color: #333; display: flex; align-items: center; }
     .suit-icon { width: 30px; height: 30px; margin-right: 10px; border-radius: 5px; }
-    .man-icon { background: #8B4513; } .pin-icon { background: #DC143C; } .sou-icon { background: #228B22; } .ji-icon { background: #4B0082; }
+
+    /* ◾️スート色：マンズ=旧ピンズ色 (#DC143C)／ピンズ=#1a2d45／ソーズ=変更なし */
+    .man-icon { background: #DC143C; }
+    .pin-icon { background: #1a2d45; }
+    .sou-icon { background: #228B22; }
+    .ji-icon  { background: #4B0082; }
+
     .tiles-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 10px; }
 
     .tile-button {
@@ -80,7 +92,7 @@
       padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
       display: flex; justify-content: center;
       background: transparent;
-      pointer-events: none; /* 下の空間をクリック可に */
+      pointer-events: none;
     }
     .footer-card {
       pointer-events: auto;
@@ -92,13 +104,13 @@
       padding: 10px;
     }
 
-    /* ▼ ここを置き換え：1列2段レイアウト */
+    /* 1列2段レイアウト（上：クリア／下：選択中） */
     .footer-grid {
       display: grid;
-      grid-template-columns: 1fr;               /* 1列 */
+      grid-template-columns: 1fr;
       grid-template-areas:
-        "clear"                                  /* 上段：クリア */
-        "status";                                /* 下段：選択中表示 */
+        "clear"
+        "status";
       gap: 8px;
       align-items: stretch;
     }
@@ -106,7 +118,6 @@
     .btn { width: 100%; padding: 12px 10px; font-size: 16px; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; }
     .btn-secondary { background: #6c757d; color: white; grid-area: clear; }
 
-    /* ▼ 追加：下段の“ボタン風”ステータス枠 */
     .btn-status {
       grid-area: status;
       width: 100%;
@@ -118,7 +129,7 @@
       text-align: center;
       background: #e9ecef;
       color: #212529;
-      pointer-events: none; /* クリック不可 */
+      pointer-events: none;
     }
 
     .btn-lines { display: inline-block; line-height: 1.1; }
@@ -135,11 +146,11 @@
     <div class="header">
       <h1>🀄 麻雀チェッカー</h1>
       <div class="usage-box">
-        <div class="usage-title">使い方</div>
+        <div class="usage-title">🀄 使い方</div> <!-- 絵文字追加 -->
         <ul class="usage-list">
           <li>自分の持つ牌をクリック</li>
           <li>最大4枚クリック可（4→0に戻る）</li>
-          <li>13枚そろうと自動で待ち牌を表示</li> <!-- 文言修正 -->
+          <li>13枚そろうと自動で待ち牌を表示</li>
         </ul>
       </div>
     </div>
@@ -176,7 +187,6 @@
   <!-- 固定フッター -->
   <div class="footer-controls" role="toolbar" aria-label="操作">
     <div id="footerCard" class="footer-card">
-      <!-- ▼ ここを差し替え：改行なしクリア＋下段「選択中」 -->
       <div class="footer-grid">
         <button class="btn btn-secondary" id="clearBtn">選択をクリア</button>
         <div class="btn-status">選択中: <span id="selectedCount">0</span> / 13枚</div>
@@ -228,17 +238,15 @@
 
     document.getElementById('clearBtn').addEventListener('click', clearSelection);
 
-    // ▼ フッター高さに合わせてbody下余白を動的設定（Safariのバー出入りに追随）
+    // ▼ フッター高さに合わせてbody下余白を動的設定
     const applyFooterSpace = () => {
       const card = document.getElementById('footerCard');
       if (!card) return;
       const h = Math.ceil(card.getBoundingClientRect().height);
-      // 余白+8pxで少し余裕
       document.body.style.paddingBottom = (h + 8) + 'px';
     };
     applyFooterSpace();
 
-    // visualViewport があればそれに追随
     if (window.visualViewport) {
       visualViewport.addEventListener('resize', applyFooterSpace);
       visualViewport.addEventListener('scroll', applyFooterSpace);
