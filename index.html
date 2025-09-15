@@ -141,6 +141,13 @@
       .btn-lines .l1, .btn-lines .l2 { display: block; }
       .btn-lines .l2 { margin-left: 0; }
     }
+
+    /* ▼▼ 追加：待ち牌をスートごとに着色（文字は白固定） ▼▼ */
+    .waiting-tile.man { background: #DC143C; border-color: #DC143C; color: #fff; }
+    .waiting-tile.pin { background: #1a2d45; border-color: #1a2d45; color: #fff; }
+    .waiting-tile.sou { background: #228B22; border-color: #228B22; color: #fff; }
+    .waiting-tile.ji  { background: #000000; border-color: #000000; color: #fff; }
+    /* ▲▲ 追加ここまで ▲▲ */
   </style>
 </head>
 <body>
@@ -493,7 +500,14 @@
         suit === 'p' ? `${num}筒` :
         suit === 's' ? `${num}索` :
         ['東','南','西','北','白','發','中'][parseInt(num)-1];
-      return `<span class="waiting-tile">${label}</span>`;
+
+      /* ▼ 変更：スート別クラス付与（文字はCSS側で白固定） */
+      const suitClass =
+        suit === 'm' ? 'man' :
+        suit === 'p' ? 'pin' :
+        suit === 's' ? 'sou' : 'ji';
+
+      return `<span class="waiting-tile ${suitClass}">${label}</span>`;
     }).join('') + `</div>`;
     resultDiv.innerHTML = html;
   }
