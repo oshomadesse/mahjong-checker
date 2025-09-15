@@ -74,7 +74,7 @@
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
     .no-waiting { color: #6c757d; font-style: italic; }
 
-    /* ==== 固定フッター（白カード＋二段） ==== */
+    /* ==== 固定フッター（白カード） ==== */
     .footer-controls {
       position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
       padding: 10px 12px; padding-bottom: calc(10px + env(safe-area-inset-bottom));
@@ -91,21 +91,34 @@
       box-shadow: 0 8px 28px rgba(0,0,0,0.18);
       padding: 10px;
     }
+
+    /* ▼ ここを置き換え：1列2段レイアウト */
     .footer-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: 1fr;               /* 1列 */
       grid-template-areas:
-        "clear check"
-        "counter counter";
+        "clear"                                  /* 上段：クリア */
+        "status";                                /* 下段：選択中表示 */
       gap: 8px;
       align-items: stretch;
     }
+
     .btn { width: 100%; padding: 12px 10px; font-size: 16px; border: none; border-radius: 12px; cursor: pointer; font-weight: 800; }
-    .btn-primary { background: linear-gradient(135deg, #FFB347 0%, #FF8008 100%); color: white; grid-area: check; }
     .btn-secondary { background: #6c757d; color: white; grid-area: clear; }
-    .selected-chip {
-      grid-area: counter; justify-self: center;
-      background: #e9ecef; padding: 10px 14px; border-radius: 999px; font-size: 14px; font-weight: 800; white-space: nowrap;
+
+    /* ▼ 追加：下段の“ボタン風”ステータス枠 */
+    .btn-status {
+      grid-area: status;
+      width: 100%;
+      padding: 12px 10px;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 800;
+      text-align: center;
+      background: #e9ecef;
+      color: #212529;
+      pointer-events: none; /* クリック不可 */
     }
 
     .btn-lines { display: inline-block; line-height: 1.1; }
@@ -126,7 +139,7 @@
         <ul class="usage-list">
           <li>自分の持つ牌をクリック</li>
           <li>最大4枚クリック可（4→0に戻る）</li>
-          <li>「待ち牌を調べる」をクリック</li>
+          <li>13枚そろうと自動で待ち牌を表示</li> <!-- 文言修正 -->
         </ul>
       </div>
     </div>
@@ -163,14 +176,10 @@
   <!-- 固定フッター -->
   <div class="footer-controls" role="toolbar" aria-label="操作">
     <div id="footerCard" class="footer-card">
+      <!-- ▼ ここを差し替え：改行なしクリア＋下段「選択中」 -->
       <div class="footer-grid">
-        <button class="btn btn-secondary" id="clearBtn">
-          <span class="btn-lines"><span class="l1">選択を</span><span class="l2">クリア</span></span>
-        </button>
-        <button class="btn btn-primary" id="checkBtn" disabled>
-          <span class="btn-lines"><span class="l1">待ち牌を</span><span class="l2">調べる</span></span>
-        </button>
-        <div class="selected-chip">選択中: <span id="selectedCount">0</span> / 13枚</div>
+        <button class="btn btn-secondary" id="clearBtn">選択をクリア</button>
+        <div class="btn-status">選択中: <span id="selectedCount">0</span> / 13枚</div>
       </div>
     </div>
   </div>
@@ -217,12 +226,6 @@
       jiContainer.innerHTML += createJihaiHTML(index + 1, char);
     });
 
-    document.getElementById('checkBtn').addEventListener('click', () => {
-      checkWaiting();
-      requestAnimationFrame(() => {
-        document.getElementById('result-section').scrollIntoView({behavior:'smooth', block:'start'});
-      });
-    });
     document.getElementById('clearBtn').addEventListener('click', clearSelection);
 
     // ▼ フッター高さに合わせてbody下余白を動的設定（Safariのバー出入りに追随）
@@ -309,7 +312,15 @@
 
   function updateUI() {
     document.getElementById('selectedCount').textContent = selectedTotal;
-    document.getElementById('checkBtn').disabled = (selectedTotal !== MAX_SELECTED);
+
+    // 13枚到達で自動計算＋スクロール
+    if (selectedTotal === MAX_SELECTED) {
+      checkWaiting();
+      requestAnimationFrame(() => {
+        document.getElementById('result-section')
+          .scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+    }
 
     Object.keys(tileCount).forEach(tileId => {
       const button = document.getElementById(tileId);
