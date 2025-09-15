@@ -7,11 +7,13 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     html { -webkit-text-size-adjust: 100%; }
+    :root { --footer-h: 64px; }
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       padding: 20px;
+      padding-bottom: calc(var(--footer-h) + env(safe-area-inset-bottom) + 20px); /* フッターぶん余白 */
       touch-action: manipulation;
     }
     .container {
@@ -45,7 +47,7 @@
       display: flex; flex-direction: column; align-items: center; padding: 10px;
       background: white; border: 2px solid #ddd; border-radius: 8px; cursor: pointer;
       transition: all 0.3s ease; position: relative; width: 100%; font-family: inherit;
-      font-size: 16px;
+      font-size: 16px; /* iOS自動ズーム対策 */
     }
     .tile-button:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
     .tile-button.selected-1 { background: #e3f2fd; border-color: #2196f3; }
@@ -61,40 +63,36 @@
       font-size: 1.1em; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     }
 
-    .controls { display: flex; gap: 10px; margin: 30px 0 10px 0; flex-wrap: wrap; }
-    .btn { padding: 12px 30px; font-size: 1em; border: none; border-radius: 8px; cursor: pointer; transition: all 0.3s ease; font-weight: bold; }
-    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4); }
-    .btn-secondary { background: #6c757d; color: white; }
-    .btn-secondary:hover { background: #5a6268; }
-    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .selected-count { padding: 10px 20px; background: #e9ecef; border-radius: 8px; font-weight: bold; }
-    .error-message { color: #dc3545; padding: 10px; background: #f8d7da; border-radius: 5px; }
-
-    .result-section { margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; min-height: 100px; }
+    .result-section { margin: 20px; margin-top: 20px; padding: 20px; background: #f8f9fa; border-radius: 10px; min-height: 100px; }
     .result-title { font-size: 1.3em; font-weight: bold; margin-bottom: 15px; color: #333; }
 
-    .waiting-tiles {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
-      gap: 10px;
-      align-items: stretch;
-    }
+    /* 待ち牌：Gridで整列（重なり解消） */
+    .waiting-tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 10px; align-items: stretch; }
     .waiting-tile {
-      display: block;
-      text-align: center;
-      padding: 12px 10px;
-      background: white;
-      border: 2px solid #667eea;
-      border-radius: 8px;
-      font-size: 1.1em;
-      font-weight: 700;
-      color: #667eea;
-      line-height: 1.2;
-      animation: fadeIn 0.5s ease;
+      display: block; text-align: center; padding: 12px 10px; background: white; border: 2px solid #667eea;
+      border-radius: 8px; font-size: 1.1em; font-weight: 700; color: #667eea; line-height: 1.2; animation: fadeIn 0.5s ease;
     }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(10px);} to { opacity: 1; transform: translateY(0);} }
     .no-waiting { color: #6c757d; font-style: italic; }
+
+    /* ==== 固定フッター（小さめ・半透明・セーフエリア対応） ==== */
+    .footer-controls {
+      position: fixed; left: 0; right: 0; bottom: 0; z-index: 1000;
+      padding: 8px 12px; padding-bottom: calc(8px + env(safe-area-inset-bottom));
+      display: flex; gap: 8px; align-items: center; justify-content: center;
+      backdrop-filter: blur(10px);
+      background: color-mix(in oklab, #ffffff 70%, transparent);
+      border-top: 1px solid rgba(0,0,0,0.08);
+      height: var(--footer-h);
+    }
+    .footer-inner { width: min(900px, 100%); display: grid; grid-template-columns: 1fr 1fr auto; gap: 8px; align-items: center; }
+    .btn { padding: 10px 16px; font-size: 16px; border: none; border-radius: 10px; cursor: pointer; font-weight: 700; }
+    .btn-primary { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .selected-chip {
+      background: #e9ecef; padding: 8px 12px; border-radius: 999px; font-size: 14px; font-weight: 700; white-space: nowrap;
+    }
+    .error-message { color: #dc3545; padding: 10px; background: #f8d7da; border-radius: 5px; margin: 0 20px 10px; display:none; }
   </style>
 </head>
 <body>
@@ -131,17 +129,23 @@
         </div>
       </div>
 
-      <div class="controls">
-        <button class="btn btn-primary" onclick="checkWaiting()" id="checkBtn" disabled>待ち牌を調べる</button>
-        <button class="btn btn-secondary" onclick="clearSelection()">選択をクリア</button>
-        <div class="selected-count">選択中: <span id="selectedCount">0</span> / 13枚</div>
-      </div>
-      <div id="limitMsg" class="error-message" style="display:none">13枚までです。新しい牌は選択できません。</div>
+      <!-- 画面内の従来ボタン群は削除済み -->
 
-      <div class="result-section">
+      <div id="limitMsg" class="error-message">13枚までです。新しい牌は選択できません。</div>
+
+      <div id="result-section" class="result-section">
         <div class="result-title">待ち牌</div>
         <div id="result"><p class="no-waiting">13枚の牌を選択してください</p></div>
       </div>
+    </div>
+  </div>
+
+  <!-- 固定フッター -->
+  <div class="footer-controls" role="toolbar" aria-label="操作">
+    <div class="footer-inner">
+      <button class="btn btn-primary" id="checkBtn" disabled>待ち牌を調べる</button>
+      <button class="btn btn-secondary" id="clearBtn">選択をクリア</button>
+      <div class="selected-chip">選択中: <span id="selectedCount">0</span> / 13枚</div>
     </div>
   </div>
 
@@ -186,6 +190,16 @@
       tileCount[tileId] = 0;
       jiContainer.innerHTML += createJihaiHTML(index + 1, char);
     });
+
+    // フッターのボタンクリック割当て
+    document.getElementById('checkBtn').addEventListener('click', () => {
+      checkWaiting();
+      // DOM更新を待ってから結果へスムーススクロール
+      requestAnimationFrame(() => {
+        document.getElementById('result-section').scrollIntoView({behavior:'smooth', block:'start'});
+      });
+    });
+    document.getElementById('clearBtn').addEventListener('click', clearSelection);
   }
 
   function createTileHTML(suit, num) {
@@ -210,37 +224,23 @@
     `;
   }
 
-  // ▼ 13枚制限の“強化”ロジック
+  // 13枚制限（強化版）
   function updateTileSelection(tileId) {
     const current = tileCount[tileId];
 
-    // 既に上限なら：未選択の牌は選べない／選択中の牌は0にだけできる
     if (selectedTotal >= MAX_SELECTED) {
-      if (current === 0) {
-        flashLimit();
-        return;
-      } else {
-        // 上限時は1〜3→0に即リセット、4→0（減る操作のみ可）
-        applyCount(tileId, 0);
-        return;
-      }
+      if (current === 0) { flashLimit(); return; }
+      applyCount(tileId, 0);
+      return;
     }
 
-    // 通常時：0→1→2→3→4→0（ただし13を超える増分は許可しない）
     const next = (current >= 4) ? 0 : current + 1;
-
-    // これからの増分
     const delta = next - current;
 
     if (selectedTotal + delta > MAX_SELECTED) {
-      // 新規選択（current=0）の場合は拒否、既存（current>0）は0に落とす
-      if (current === 0) {
-        flashLimit();
-        return;
-      } else {
-        applyCount(tileId, 0);
-        return;
-      }
+      if (current === 0) { flashLimit(); return; }
+      applyCount(tileId, 0);
+      return;
     }
 
     applyCount(tileId, next);
@@ -250,7 +250,6 @@
     const button = document.getElementById(tileId);
     const countSpan = document.getElementById(`count-${tileId}`);
     const old = tileCount[tileId];
-
     tileCount[tileId] = newCount;
     selectedTotal += (newCount - old);
 
